@@ -1,6 +1,5 @@
 package org.example.Pages;
 
-import org.example.Utils.ScreenshotManager;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -9,17 +8,15 @@ import org.testng.Assert;
 import java.time.Duration;
 import java.util.function.Function;
 
-public class BasePage {
+public class BasePage<T extends BasePage<T>> {
     protected final WebDriver driver;
     protected final WebDriverWait wait;
     protected final JavascriptExecutor js;
-    protected final ScreenshotManager screenshotManager;
 
     public BasePage(WebDriver driver) {
         this.driver = driver;
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(15));
         this.js = (JavascriptExecutor) driver;
-        this.screenshotManager = ScreenshotManager.getInstance(driver);
     }
 
     public void sendKeys(WebElement element, String text) {
@@ -153,7 +150,7 @@ public class BasePage {
      * @param locator Локатор элемента для проверки
      * @param elementName Название элемента для логов
      */
-    protected void verifyElementIsChosen(By locator, String elementName) {
+    protected BasePage verifyElementIsChosen(By locator, String elementName) {
         try {
             // 1. Ожидаем появления и видимости элемента
             WebElement element = wait.until(driver -> {
@@ -201,6 +198,7 @@ public class BasePage {
                     e.getMessage()
             ));
         }
+        return this;
     }
 
     protected void scrollAndClick(WebElement element, String description) {
@@ -229,5 +227,13 @@ public class BasePage {
 
     protected void assertDisplayed(WebElement element, String errorMessage) {
         Assert.assertTrue(element.isDisplayed(), errorMessage);
+    }
+
+    @SuppressWarnings("unchecked")
+    public T waitForPageToLoad(long timeoutInSeconds) {
+        new WebDriverWait(driver, Duration.ofSeconds(timeoutInSeconds))
+                .until(driver -> ((JavascriptExecutor) driver)
+                        .executeScript("return document.readyState").equals("complete"));
+        return (T) this;
     }
 }

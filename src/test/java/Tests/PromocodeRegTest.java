@@ -2,34 +2,25 @@ package Tests;
 
 import org.example.Config.TestConfig;
 import org.example.Gmail.GmailService;
-import org.example.Pages.DepositPage;
-import org.example.Pages.LoyaltyBonusesPage;
-import org.example.Pages.ProfilePage;
-import org.example.Pages.SecondProfileRegistrationModal;
-import org.example.Utils.ScreenshotManager;
+import org.example.Pages.*;
 import org.example.Utils.WebDriverFactory;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.devtools.DevTools;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
-import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.testng.annotations.Listeners;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.security.GeneralSecurityException;
-import java.time.Duration;
 
 import static java.lang.Thread.sleep;
 
+@Listeners(org.example.Utils.TestListener.class)
 public class PromocodeRegTest {
     private WebDriver driver;
     private GmailService gmailService;
-    private ScreenshotManager screenshotManager;
 
     private static final String BASE_URL = "https://test-devcasino.egamings.com/en";
     private static final String EMAIL_BASE = "danzyx47+";
@@ -49,60 +40,49 @@ public class PromocodeRegTest {
 
     @Test
     public void testPromoRegistrationWithEmailConfirmation() {
-        try {
-            // 1. Подготовка данных
-            final String testEmail = EMAIL_BASE + System.currentTimeMillis() + "@gmail.com";
-            final String expectedPromo = TestConfig.getDepositPromocode();
+        // 1. Подготовка данных
+        final String testEmail = EMAIL_BASE + System.currentTimeMillis() + "@gmail.com";
+        final String expectedPromo = TestConfig.getDepositPromocode();
 
-            // 2. Регистрация
-            SecondProfileRegistrationModal regModal = new SecondProfileRegistrationModal(driver);
-            driver.get(BASE_URL);
+        // 2. Регистрация
+        new SecondProfileRegistrationModal(driver)
+                .openModal()
+                .proceedWithoutBonus()
+                .fillRegistrationForm(testEmail, TestConfig.getBasePassword(), expectedPromo)
+                .checkCheckboxes()
+                .submitRegistration();
 
-            regModal.openModal();
-            regModal.proceedWithoutBonus();
-            regModal.fillRegistrationForm(testEmail, TestConfig.getBasePassword(), expectedPromo);
-            regModal.checkCheckboxes();
-            regModal.submitRegistration();
+        // 3. Подтверждение email
+        String confirmationLink = gmailService.waitForConfirmationLink(testEmail, 3);
 
-            // 3. Подтверждение email
-            String confirmationLink = gmailService.waitForConfirmationLink(testEmail, 3);
+        // Переход по ссылке подтверждения
+        new EmailConfirmationPage(driver)
+                .openConfirmationLink(confirmationLink);
 
-            // Переход по ссылке подтверждения
-            ((JavascriptExecutor)driver).executeScript("window.location.href = '" + confirmationLink + "'");
-            sleep(3000);
-            new WebDriverWait(driver, Duration.ofSeconds(10))
-                    .until(ExpectedConditions.not(ExpectedConditions.urlToBe(confirmationLink)));
-            sleep(5000);
+        // 4. Переход на страницу бонусов
+        driver.get(BASE_URL + PROFILE_BONUSES_PAGE);
 
-            // 4. Переход на страницу бонусов
-            driver.get(BASE_URL + PROFILE_BONUSES_PAGE);
-            sleep(4000);
+        // 5. Проверка плашки Subscribed на карточке бонуса
+        new LoyaltyBonusesPage(driver)
+                .waitForPageToLoad(7)
+                .verifyPromocodedepHasSubscribedTag();
 
-            // 5. Проверка плашки Subscribed на карточке бонуса
-            LoyaltyBonusesPage bonusesPage = new LoyaltyBonusesPage(driver);
-            bonusesPage.verifyPromocodedepHasSubscribedTag();
+        // 6. Переход на страницу профиля
+        driver.get(BASE_URL + PROFILE_PAGE);
 
-            // 6. Переход на страницу профиля
-            driver.get(BASE_URL + PROFILE_PAGE);
-            sleep(4000);
+        // 7. Заполнение полей
+        new ProfilePage(driver)
+                .waitForPageToLoad(7)
+                .fillProfileForm()
+                .submitProfileForm();
 
-            // 7. Заполнение полей
-            ProfilePage profilePage = new ProfilePage(driver);
-            profilePage.fillProfileForm();
-            profilePage.submitProfileForm();
+        // 8. Переход на страницу депозита
+        driver.get(BASE_URL + DEPOSIT_PAGE);
 
-            // 8. Переход на страницу депозита
-            driver.get(BASE_URL + DEPOSIT_PAGE);
-            sleep(4000);
-
-            // 9. Выбор платежки, бонуса и инициация депозита
-            DepositPage depositPage = new DepositPage(driver);
-            depositPage.initDeposit();
-
-        } catch (Exception e) {
-            ScreenshotManager.getInstance(driver).takeScreenshot("PromocodeDep");
-            Assert.fail("Ошибка выполнения теста: " + e.getMessage(), e);
-        }
+        // 9. Выбор платежки, бонуса и инициация депозита
+        new DepositPage(driver)
+                .waitForPageToLoad(7)
+                .initDeposit();
     }
 
     @AfterMethod

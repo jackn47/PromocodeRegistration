@@ -1,15 +1,13 @@
 package org.example.Pages;
 
 import org.example.Config.TestConfig;
-import org.example.Utils.ScreenshotManager;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
-public class ProfilePage extends BasePage {
+public class ProfilePage extends BasePage<ProfilePage> {
 
     @FindBy(css = "[data-wlc-element='input_current-password']")
     private WebElement currentPasswordInput;
@@ -74,7 +72,7 @@ public class ProfilePage extends BasePage {
         PageFactory.initElements(driver, this);
     }
 
-    public void fillProfileForm() {
+    public ProfilePage fillProfileForm() {
         sendKeys(firstNameInput, DEFAULT_VALUES.get("first-name"));
         sendKeys(lastNameInput, DEFAULT_VALUES.get("last-name"));
 
@@ -90,9 +88,11 @@ public class ProfilePage extends BasePage {
         selectFromCustomDropdown(birthDayDropdown, DEFAULT_VALUES.get("birth-day"));
         selectFromCustomDropdown(birthMonthDropdown, DEFAULT_VALUES.get("birth-month"));
         selectFromCustomDropdown(birthYearDropdown, DEFAULT_VALUES.get("birth-year"));
+
+        return this;
     }
 
-    private void selectFromCustomDropdown(WebElement dropdownButton, String optionText) {
+    private ProfilePage selectFromCustomDropdown(WebElement dropdownButton, String optionText) {
         for (int attempt = 1; attempt <= 3; attempt++) {
             try {
                 scrollAndClick(dropdownButton, "dropdown");
@@ -121,7 +121,7 @@ public class ProfilePage extends BasePage {
                     if (itemText.equalsIgnoreCase(optionText)) {
                         scrollAndClick(item, "birth_date_option");
                         System.out.println("Выбрана опция: " + optionText);
-                        return;
+                        return this;
                     }
                 }
 
@@ -134,9 +134,10 @@ public class ProfilePage extends BasePage {
                 sleep(500);
             }
         }
+        throw new AssertionError("Не удалось выбрать из дропдауна: " + optionText);
     }
 
-    private void selectGenderFromDropdown(String genderText) {
+    private ProfilePage selectGenderFromDropdown(String genderText) {
         scrollAndClick(genderDropdown, "dropdown");
         waitUntil(driver -> driver.findElements(By.cssSelector(".wlc-select__dropdown-item")).size() > 0);
 
@@ -144,14 +145,15 @@ public class ProfilePage extends BasePage {
         for (WebElement item : items) {
             if (item.getText().trim().equalsIgnoreCase(genderText)) {
                 scrollAndClick(item, "gender_option");
-                return;
+                return this;
             }
         }
 
         throw new RuntimeException("Не найдена опция гендера: " + genderText);
     }
 
-    public void submitProfileForm() {
+    public ProfilePage submitProfileForm() {
         scrollAndClick(submitButton, "submit");
+        return this;
     }
 }

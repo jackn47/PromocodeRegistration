@@ -1,12 +1,11 @@
 package org.example.Pages;
 
-import org.example.Utils.ScreenshotManager;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
-public class LoyaltyBonusesPage extends BasePage {
+public class LoyaltyBonusesPage extends BasePage<LoyaltyBonusesPage> {
 
     @FindBy(css = "[data-wlc-element='wlc-bonus-item_id-801523']")
     private WebElement bonusPromocodeDep;
@@ -19,7 +18,7 @@ public class LoyaltyBonusesPage extends BasePage {
         PageFactory.initElements(driver, this);
     }
 
-    public void verifyPromocodedepHasSubscribedTag() {
+    public LoyaltyBonusesPage verifyPromocodedepHasSubscribedTag() {
         try {
             waitUntilVisible(bonusPromocodeDep);
 
@@ -28,13 +27,13 @@ public class LoyaltyBonusesPage extends BasePage {
 
             waitUntilVisible(statusTag);
 
-            screenshotManager.takeScreenshot("bonus-verified");
-
             System.out.println("Бонус PROMOCODEDEP имеет статус SUBSCRIBED");
             assertDisplayed(statusTag, "Тег SUBSCRIBED отсутствует у бонуса PROMOCODEDEP");
 
         } catch (Exception e) {
             throw new AssertionError("Ошибка проверки бонуса PROMOCODEDEP: " + e.getMessage(), e);
         }
+
+        return this;
     }
 }
