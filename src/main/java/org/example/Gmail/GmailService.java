@@ -27,6 +27,8 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.lang.Thread.sleep;
+
 public class GmailService {
     private static final String APPLICATION_NAME = "Test Automation";
     private static final GsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
@@ -93,9 +95,9 @@ public class GmailService {
                 .build();
     }
 
-    public String waitForConfirmationLink(String email, int maxAttempts) throws Exception {
+    public String waitForConfirmationLink(String email, int maxAttempts) {
         System.out.println("\n=== Ожидаем доставки письма ===");
-        Thread.sleep(10000);
+        sleep(10000);
 
         System.out.println("\n=== Начало поиска письма ===");
         System.out.println("Ищем письмо для: " + email);
@@ -108,11 +110,20 @@ public class GmailService {
                 return link;
             } catch (Exception e) {
                 System.out.println("Ошибка: " + e.getMessage());
-                if (attempt == maxAttempts) throw e;
-                Thread.sleep(15000); // 30 секунд между попытками
+                if (attempt == maxAttempts) {
+                    throw new RuntimeException(
+                            String.format("❌ Не удалось получить ссылку подтверждения на %s после %d попыток", email, maxAttempts), e);
+                }
+                sleep(15000);
             }
         }
         throw new IllegalStateException("Невозможно достичь этого места");
+    }
+
+    private void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ignored) {}
     }
 
     private String getConfirmationLink(String email) throws Exception {

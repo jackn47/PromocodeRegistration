@@ -9,7 +9,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.time.Duration;
 import java.util.List;
 
-public class DepositPage extends BasePage {
+public class DepositPage extends BasePage<DepositPage> {
     private static final By ROYAL_PAY = By.cssSelector("button[data-wlc-element='block_profile-deposit'][title='Royal pay']");
 
     @FindBy(css = "[data-wlc-element='block_bonus_id-801523']")
@@ -29,7 +29,7 @@ public class DepositPage extends BasePage {
         PageFactory.initElements(driver, this);
     }
 
-    public void initDeposit() {
+    public DepositPage initDeposit() {
         try {
             // 1. Клик по Royal Pay
             jsClick(ROYAL_PAY, "Royal Pay");
@@ -49,14 +49,6 @@ public class DepositPage extends BasePage {
         } catch (Exception e) {
             throw new AssertionError("Ошибка выполнения теста: Deposit failed: " + e.getMessage(), e);
         }
-    }
-
-    private void checkBonusIsChosen() {
-        wait.until(ExpectedConditions.visibilityOf(bonusBlockPromocodeDep));
-        String classAttr = bonusBlockPromocodeDep.getAttribute("class");
-        if (!classAttr.contains("chosen")) {
-            throw new AssertionError("Бонус не выбран: отсутствует класс 'chosen'");
-        }
-        System.out.println("Бонус выбран корректно (класс содержит 'chosen').");
+        return this;
     }
 }
